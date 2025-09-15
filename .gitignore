@@ -10,6 +10,10 @@
 .env.local
 .env.*.local
 
+# Diesel migration files (you may want to ignore generated SQL backups)
+**/migrations/*/*.sql.bk
+**/migrations/*/*.tmp
+
 # IDE/editor files
 # VS Code
 .vscode/

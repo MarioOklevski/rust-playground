@@ -4,7 +4,22 @@ use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use dotenvy::dotenv;
+use diesel::pg::PgConnection;
+use diesel::r2d2::{self, ConnectionManager};
 
+type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
+
+fn establish_connection() -> DbPool {
+    dotenv().ok(); // load .env
+
+    let database_url = dotenvy::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set in .env");
+    let manager = ConnectionManager::<PgConnection>::new(database_url);
+
+    r2d2::Pool::builder()
+        .build(manager)
+        .expect("Failed to create database pool")
+}
 // Define the hello route
 #[utoipa::path(
     get,
@@ -45,7 +60,7 @@ async fn manual_hello() -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-
+    establish_connection();
     HttpServer::new(|| {
         App::new()
             .service(web::resource("/").to(hello))
