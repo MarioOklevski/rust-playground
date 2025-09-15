@@ -3,11 +3,7 @@ mod api_docs;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-
-// Define the OpenAPI specification with paths
-#[derive(OpenApi)]
-#[openapi(paths(hello, echo, manual_hello))]
-struct ApiDoc;
+use dotenvy::dotenv;
 
 // Define the hello route
 #[utoipa::path(
@@ -48,19 +44,21 @@ async fn manual_hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
     HttpServer::new(|| {
         App::new()
             .service(web::resource("/").to(hello))
             .service(web::resource("/echo").to(echo))
-            .service(
-                web::scope("/docs").service(api_docs::openapi_json)
-                // .service(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-                .service(
-                    SwaggerUi::new("/swagger/{_:.*}").url("/docs/openapi.json", Default::default()),
-                ),
-            )
             .route("/hey", web::get().to(manual_hello))
-            })
+            // Serve raw OpenAPI JSON (from api_docs.rs)
+            .service(web::scope("/docs").service(api_docs::openapi_json))
+            // Serve Swagger UI
+            .service(
+                SwaggerUi::new("/swagger/{_:.*}")
+                    .url("/docs/openapi.json", api_docs::ApiDoc::openapi()),
+            )
+    })
     .bind(("127.0.0.1", 8080))?
     .run()
     .await

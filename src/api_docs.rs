@@ -6,7 +6,11 @@ use utoipa::{Modify, OpenApi};
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(),
+    paths(
+        crate::hello,
+        crate::echo,
+        crate::manual_hello,
+    ),
     components (
         schemas ()
     ),
@@ -35,10 +39,9 @@ impl Modify for SecurityAddon {
             ),
         );
         let mut contact = utoipa::openapi::Contact::new();
-        contact.name = Some(env::var("API_CONTACT_NAME").expect("`API_CONTACT_NAME` must be set"));
-        contact.url = Some(env::var("API_CONTACT_URL").expect("`API_CONTACT_URL` must be set"));
-        contact.email =
-            Some(env::var("API_CONTACT_EMAIL").expect("`API_CONTACT_EMAIL` must be set"));
+        contact.name = Some(env::var("API_CONTACT_NAME").unwrap_or_else(|_| "John doe".to_string()));
+        contact.url = Some(env::var("API_CONTACT_URL").unwrap_or_else(|_| "https://example.com".to_string()));
+        contact.email = Some(env::var("API_CONTACT_EMAIL").unwrap_or_else(|_| "johndoe@example.com".to_string()));
         openapi.info.description = Some(include_str!("../api-desc.md").to_owned());
         openapi.info.title =
             env::var("API_TITLE").unwrap_or_else(|_| "RESTful Todo API documentation".to_owned());
